@@ -82,20 +82,29 @@ int main()
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 
 	// ci_entry
+	char *next_entry;
+	bool fde = true;
 	ci_entry *init_ci = new ci_entry(*eh_frame);
+	next_entry = init_ci->entry_end();
+	fde = (init_ci->is_cie() == false);
 	init_ci->dump();
-	char *next_entry = init_ci->entry_end();
-	for(int i = 0; i < 100; i++) {
-		ci_entry *ci = new ci_entry(*eh_frame, next_entry);
-//		fd_entry *fd = new fd_entry(*eh_frame, next_entry);
-		if (ci->is_cie()) {
-			ci->dump();
-		}
-		else if (!ci->is_cie()) {	/* fd entry */
-//			fd->dump();
+	delete(init_ci);
+
+	while (true) {
+		while (fde) {
+			fd_entry *fd = new fd_entry(*eh_frame, next_entry);
+			fde = (fd->is_cie() == false);
+			next_entry = fd->entry_end();
+			if (next_entry == NULL) break;
+			fd->dump();
+			delete(fd);
 		}
 
+		if (next_entry == NULL) break;
+		ci_entry *ci = new ci_entry(*eh_frame, next_entry);
 		next_entry = ci->entry_end();
+		fde = (init_ci->is_cie() == false);
+		ci->dump();
 		delete(ci);
 	}
 
