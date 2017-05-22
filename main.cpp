@@ -82,19 +82,22 @@ int main()
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 
 	// ci_entry
-	ci_entry *ci = new ci_entry(*eh_frame);
+	ci_entry *init_ci = new ci_entry(*eh_frame);
+	init_ci->dump();
+	char *next_entry = init_ci->entry_end();
+	for(int i = 0; i < 100; i++) {
+		ci_entry *ci = new ci_entry(*eh_frame, next_entry);
+//		fd_entry *fd = new fd_entry(*eh_frame, next_entry);
+		if (ci->is_cie()) {
+			ci->dump();
+		}
+		else if (!ci->is_cie()) {	/* fd entry */
+//			fd->dump();
+		}
 
-	uint64_t pointer_encoding = ci->m_pointer_encoding;
-	char *instructions = ci->initial_instructions();
-	ci->dump();
-
-	uint64_t dp = decode_pointer(&instructions, pointer_encoding);
-	debug("decode_pointer: 0x%lx\n", dp);
-
-
-	// fd_entry
-	fd_entry *fd = new fd_entry(*eh_frame);
-	fd->dump();
+		next_entry = ci->entry_end();
+		delete(ci);
+	}
 
 	return 0;
 }

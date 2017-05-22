@@ -504,7 +504,7 @@ public:
 		printf("m_personality_encoding: 0x%lx\n", m_personality_encoding);
 		printf("m_personality_function: 0x%lx\n", m_personality_function);
 		printf("m_initial_instructions: %p\n", m_initial_instructions);
-		printf("*m_initial_instructions: %c\n", *m_initial_instructions);
+//		printf("*m_initial_instructions: %c\n", *m_initial_instructions);
 		printf("---------------------------------------------------\n");
 	}
 
@@ -639,7 +639,7 @@ public:
 		printf("m_pc_range: 0x%lx\n", m_pc_range);
 		printf("m_lsda: 0x%lx\n", m_lsda);
 		printf("m_instructions: %p\n", m_instructions);
-		printf("m_instructions: %c\n", *m_instructions);
+//		printf("m_instructions: %c\n", *m_instructions);
 		printf("---------------------------------------------------\n");
 	}
 

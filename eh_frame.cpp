@@ -109,7 +109,6 @@ decode_pointer(char **addr, uint64_t encoding)
 		case DW_EH_PE_sdata4:
 			result = add_offset(result, *reinterpret_cast<int32_t *>(*addr));
 			*addr += sizeof(int32_t);
-						debug("*addr: %p\n", *addr);
 			break;
 
 		case DW_EH_PE_sdata8:
@@ -283,6 +282,7 @@ ci_entry::non_virtual_parse(char *addr)
 	m_data_alignment = dwarf4::decode_sleb128(&p);
 	m_return_address_reg = dwarf4::decode_uleb128(&p);
 
+	debug("m_augmentation_string[0]: %c\n", m_augmentation_string[0]);
 	if (m_augmentation_string[0] == 'z')
 	{
 		auto len = dwarf4::decode_uleb128(&p);
@@ -300,7 +300,6 @@ ci_entry::non_virtual_parse(char *addr)
 					m_personality_encoding = *reinterpret_cast<uint8_t *>(p++);
 					m_personality_function =
 						decode_pointer(&p, m_personality_encoding);
-					debug("m_personality_function: 0x%lx\n", m_personality_function);
 					break;
 
 				case 'R':
