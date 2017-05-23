@@ -22,7 +22,7 @@
 #include "misc.h"
 #include "abort.h"
 #include "dwarf4.h"
-
+#include "log.h"
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -1665,12 +1665,12 @@ dwarf4::decode_uleb128(char **addr)
 #endif
 
 void
-dwarf4::unwind(const fd_entry &fde, register_state *state)
+dwarf4::unwind(const fd_entry *fde, register_state *state)
 {
     if (state == nullptr)
         return;
 
-    auto row = private_decode_cfi(fde, state);
+    auto row = private_decode_cfi(*fde, state);
     auto cfa = private_decode_cfa(row, state);
 
     for (auto i = 0U; i < state->max_num_registers(); i++)
@@ -1683,6 +1683,7 @@ dwarf4::unwind(const fd_entry &fde, register_state *state)
         state->set(i, private_decode_reg(reg, cfa, state));
     }
 
+    debug("unwind done\n");
     state->commit(cfa + row.arg_size());
 }
 

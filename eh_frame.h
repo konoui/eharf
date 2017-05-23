@@ -639,6 +639,7 @@ public:
 		printf("m_pc_range: 0x%lx\n", m_pc_range);
 		printf("m_lsda: 0x%lx\n", m_lsda);
 		printf("m_instructions: %p\n", m_instructions);
+		printf("m_cie.entry_start(): %p\n", m_cie.entry_start());
 //		printf("m_instructions: %c\n", *m_instructions);
 		printf("---------------------------------------------------\n");
 	}

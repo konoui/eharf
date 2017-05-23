@@ -282,14 +282,14 @@ ci_entry::non_virtual_parse(char *addr)
 	m_data_alignment = dwarf4::decode_sleb128(&p);
 	m_return_address_reg = dwarf4::decode_uleb128(&p);
 
-	debug("m_augmentation_string[0]: %c\n", m_augmentation_string[0]);
+//	debug("m_augmentation_string[0]: %c\n", m_augmentation_string[0]);
 	if (m_augmentation_string[0] == 'z')
 	{
 		auto len = dwarf4::decode_uleb128(&p);
 
 		for (auto i = 1U; m_augmentation_string[i] != 0 && i <= len; i++)
 		{
-			debug("m_augmentation_string[i]: %c\n", m_augmentation_string[i]);
+//			debug("m_augmentation_string[i]: %c\n", m_augmentation_string[i]);
 			switch (m_augmentation_string[i])
 			{
 				case 'L':

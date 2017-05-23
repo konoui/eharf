@@ -5,7 +5,9 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
 
+#include "dwarf4.h"
 #include "eh_frame_list.h"
 
 #include "eh_frame.h"
@@ -81,32 +83,42 @@ int main()
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 
-	// ci_entry
+	struct cfi {
+		std::vector<ci_entry *> ci_entries;
+		std::vector<fd_entry *> fd_entries;
+	};
+	struct cfi cfi;
+
+	ci_entry *cie;
+	fd_entry *fde;
 	char *next_entry;
-	bool fde = true;
-	ci_entry *init_ci = new ci_entry(*eh_frame);
-	next_entry = init_ci->entry_end();
-	fde = (init_ci->is_cie() == false);
-	init_ci->dump();
-	delete(init_ci);
+
+	cie = new ci_entry(*eh_frame);
+	fde = new fd_entry(*eh_frame);
+	next_entry = cie->entry_end();
+	if (cie->is_cie()) cie->dump();
+	else fde->dump();
+	delete(cie);
+	delete(fde);
 
 	while (true) {
-		while (fde) {
-			fd_entry *fd = new fd_entry(*eh_frame, next_entry);
-			fde = (fd->is_cie() == false);
-			next_entry = fd->entry_end();
-			if (next_entry == NULL) break;
-			fd->dump();
-			delete(fd);
-		}
-
+		cie = new ci_entry(*eh_frame, next_entry);
+		fde = new fd_entry(*eh_frame, next_entry);
+		next_entry = cie->entry_end();
 		if (next_entry == NULL) break;
-		ci_entry *ci = new ci_entry(*eh_frame, next_entry);
-		next_entry = ci->entry_end();
-		fde = (init_ci->is_cie() == false);
-		ci->dump();
-		delete(ci);
+		if (cie->is_cie())
+			cie->dump();
+		else
+			fde->dump();
+
+		delete(cie);
+		delete(fde);
 	}
+
+	register_state *state = new register_state();
+	dwarf4::unwind(fde, state);
+	debug("%ld\n", state->max_num_registers());
+
 
 	return 0;
 }
