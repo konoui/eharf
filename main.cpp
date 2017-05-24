@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 
+#include "registers_intel_x64.h"
 #include "dwarf4.h"
 #include "eh_frame_list.h"
 
@@ -83,41 +84,25 @@ int main()
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 
-	struct cfi {
-		std::vector<ci_entry *> ci_entries;
-		std::vector<fd_entry *> fd_entries;
-	};
-	struct cfi cfi;
+	std::vector<fd_entry> g_fde;
+	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
+		if(fde.is_cie()) {
+			auto cie = ci_entry(*eh_frame, fde.entry_start());
+			cie.dump();
+			continue;
+		}
 
-	ci_entry *cie;
-	fd_entry *fde;
-	char *next_entry;
-
-	cie = new ci_entry(*eh_frame);
-	fde = new fd_entry(*eh_frame);
-	next_entry = cie->entry_end();
-	if (cie->is_cie()) cie->dump();
-	else fde->dump();
-	delete(cie);
-	delete(fde);
-
-	while (true) {
-		cie = new ci_entry(*eh_frame, next_entry);
-		fde = new fd_entry(*eh_frame, next_entry);
-		next_entry = cie->entry_end();
-		if (next_entry == NULL) break;
-		if (cie->is_cie())
-			cie->dump();
-		else
-			fde->dump();
-
-		delete(cie);
-		delete(fde);
+		g_fde.push_back(fde);
+		fde.dump();
 	}
 
-	register_state *state = new register_state();
-	dwarf4::unwind(fde, state);
-	debug("%ld\n", state->max_num_registers());
+//	g_fde[0].dump();
+//	register_state *state = new register_state();
+	struct registers_intel_x64_t registers = { };
+	register_state_intel_x64 *state = new register_state_intel_x64(registers);
+	dwarf4::unwind(g_fde[0], state);
+	state->dump();
+//	debug("%ld\n", );
 
 
 	return 0;
