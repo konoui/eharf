@@ -88,23 +88,29 @@ int main()
 	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
 		if(fde.is_cie()) {
 			auto cie = ci_entry(*eh_frame, fde.entry_start());
-			cie.dump();
+//			cie.dump();
 			continue;
 		}
 
 		g_fde.push_back(fde);
-		fde.dump();
+//		fde.dump();
 	}
 
-//	g_fde[0].dump();
 //	register_state *state = new register_state();
 	struct registers_intel_x64_t registers = { };
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
-	dwarf4::unwind(g_fde[0], state);
-	state->dump();
-//	debug("%ld\n", );
 
+	for (auto itr = g_fde.begin(); itr != g_fde.end(); ++itr) {
+		log("------------------------------------\n");
+		dwarf4::decode_cfi(*itr, state);
+		log("------------------------------------\n");
+	}
 
+	/*
+	g_fde[50].dump();
+	debug("above fde decoding\n");
+	dwarf4::decode_cfi(g_fde[50], state);
+	*/
 	return 0;
 }
 

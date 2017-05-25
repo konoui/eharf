@@ -369,6 +369,10 @@ public:
     ///
     static uint64_t decode_uleb128(char **addr);
 
+    //NOTE[watanabe] add
+    static void
+    decode_cfi(const fd_entry &fde, register_state *state);
+
     /// Unwind the Stack
     ///
     /// Given information stored in a Frame Description Entry (FDE), and

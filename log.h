@@ -32,5 +32,8 @@
 #endif
 
 #define debug(fmt, args...)	printf("%s: " fmt, __func__, ##args)
+#define alert(fmt, args...)	 printf("\x1b[31m");	\
+		printf("%s: " fmt, __func__, ##args);	\
+		printf("\x1b[0m")
 
 #endif
