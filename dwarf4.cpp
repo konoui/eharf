@@ -190,12 +190,31 @@ public:
 		m_registers[index].set_value(value);
 	}
 
+	//FIXME split dwarfdump member from this class and make a class dwarf dump
+	void dwarfdump_regs()
+	{
+		for (auto i = 0; i < MAX_NUM_REGISTERS; ++i) {
+			if (m_registers[i].value())
+				printf("r%d=%ld(cfa) ", i, m_registers[i].value());
+		}
+		printf("\n");
+	}
+
 private:
 	cfi_cfa m_cfa;
 	uint64_t m_arg_size;
 	cfi_register m_registers[MAX_NUM_REGISTERS];
 };
 
+class dwarfdump
+{
+//public
+	// dwarfdump
+//	void dwarfdump_reg()
+//	void dwarfdump_cfa()
+private:
+	cfi_table_row m_row;
+};
 // -----------------------------------------------------------------------------
 // Unwind Helpers
 // -----------------------------------------------------------------------------
@@ -1697,13 +1716,12 @@ void
 dwarf4::decode_cfi(const fd_entry &fde, register_state *state)
 {
 	auto row = private_decode_cfi(fde, state);
-	/*
-	for (auto i = 0; i < 17; i++)
-		log("reg(0x%x) 0x%lx\n", i, row.reg(i).value());
-	auto cfa = row.cfa();
-	log("m_value 0x%lx\n", cfa.value());
-	log("m_offset 0x%lx\n", cfa.offset());
-	*/
+	printf("-----------------------------------------\n");
+	row.dwarfdump_regs();
+	printf("-----------------------------------------\n");
+//	log("m_value 0x%lx\n", row.cfa().value()); // a register number
+//	log("m_offset 0x%lx\n", row.cfa().offset()); // cfa of a register number
+
 }
 
 #ifndef __clang__
