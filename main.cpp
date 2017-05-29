@@ -88,7 +88,7 @@ int main()
 	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
 		if(fde.is_cie()) {
 			auto cie = ci_entry(*eh_frame, fde.entry_start());
-			cie.dump();
+//			cie.dump();
 			continue;
 		}
 
@@ -101,9 +101,8 @@ int main()
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
 
 	for (auto itr = g_fde.begin(); itr != g_fde.end(); ++itr) {
-		log("------------------------------------\n");
+		// objdump or dwarfdump in this function
 		dwarf4::decode_cfi(*itr, state);
-		log("------------------------------------\n");
 	}
 
 	return 0;

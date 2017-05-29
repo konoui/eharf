@@ -190,31 +190,29 @@ public:
 		m_registers[index].set_value(value);
 	}
 
-	//FIXME split dwarfdump member from this class and make a class dwarf dump
-	void dwarfdump_regs()
-	{
-		for (auto i = 0; i < MAX_NUM_REGISTERS; ++i) {
-			if (m_registers[i].value())
-				printf("r%d=%ld(cfa) ", i, m_registers[i].value());
-		}
-		printf("\n");
-	}
-
 private:
 	cfi_cfa m_cfa;
 	uint64_t m_arg_size;
 	cfi_register m_registers[MAX_NUM_REGISTERS];
 };
 
-class dwarfdump
+
+// -----------------------------------------------------------------------------
+// NOTE[watanabe] dwarfdump helper
+// -----------------------------------------------------------------------------
+//FIXME split dwarfdump member from this class and make a class dwarf dump
+void dwarfdump_regs(cfi_table_row *row)
 {
-//public
-	// dwarfdump
-//	void dwarfdump_reg()
-//	void dwarfdump_cfa()
-private:
-	cfi_table_row m_row;
-};
+	if (row->cfa().offset())
+		dwarfprint("cfa=%02ld(r%ld) ", row->cfa().offset(), row->cfa().value     ());
+	for (auto i = 0; i < MAX_NUM_REGISTERS; ++i) {
+		if (row->reg(i).value())
+			dwarfprint("r%d=%ld(cfa) ", i, row->reg(i).value());
+	}
+	dwarfprint("\n");
+}
+
+
 // -----------------------------------------------------------------------------
 // Unwind Helpers
 // -----------------------------------------------------------------------------
@@ -1383,9 +1381,14 @@ private_parse_instruction(cfi_table_row *row,
 	{
 		case DW_CFA_advance_loc:
 		{
+			//previous instructions dump
+			dwarfdump_regs(row);
+
 			*l2 += static_cast<uint64_t>(operand) * cie.code_alignment();
 			//FIXME output is different from objdump regarding offset(*l2)
-			log("DW_CFA_advance_loc: %ld to 0x%lx\n", *l2, (pc_begin + *l2));
+			objdump("DW_CFA_advance_loc: %ld to 0x%lx\n", *l2, (pc_begin + *l2));
+			// current instruction output
+			dwarfprint("0x%lx: ", (pc_begin + *l2));
 			break;
 		}
 
@@ -1393,7 +1396,7 @@ private_parse_instruction(cfi_table_row *row,
 		{
 			auto value = static_cast<int64_t>(dwarf4::decode_uleb128(p)) * cie.data_alignment();
 			row->set_reg(cfi_register(operand, rule_offsetn, static_cast<uint64_t>(value)));
-			log("DW_CFA_offset: reg(%ld) %ld\n", row->reg(operand).index(), row->reg(operand).value());
+			objdump("DW_CFA_offset: reg(%ld) %ld\n", row->reg(operand).index(), row->reg(operand).value());
 			break;
 		}
 
@@ -1406,7 +1409,7 @@ private_parse_instruction(cfi_table_row *row,
 
 		case DW_CFA_nop:
 		{
-			log("DW_CFA_nop\n");
+			objdump("DW_CFA_nop\n");
 			break;
 		}
 
@@ -1421,7 +1424,9 @@ private_parse_instruction(cfi_table_row *row,
 		{
 			*l2 += get<uint8_t>(p) * cie.code_alignment();
 			//FIXME output is different from objdump regarding offset(*l2)
-			log("DW_CFA_advance_loc1: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
+			objdump("DW_CFA_advance_loc1: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
+			dwarfprint("0x%lx: ", (pc_begin + *l2));
+
 			break;
 		}
 
@@ -1429,7 +1434,7 @@ private_parse_instruction(cfi_table_row *row,
 		{
 			*l2 += get<uint16_t>(p) * cie.code_alignment();
 			//FIXME output is different from objdump regarding offset(*l2)
-			log("DW_CFA_advance_loc2: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
+			objdump("DW_CFA_advance_loc2: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
 			break;
 		}
 
@@ -1508,7 +1513,7 @@ private_parse_instruction(cfi_table_row *row,
 			cfa.set_value(dwarf4::decode_uleb128(p));
 			cfa.set_offset(static_cast<int64_t>(dwarf4::decode_uleb128(p)));
 			row->set_cfa(cfa);
-			log("DW_CFA_def_cfa: reg(%ld) %ld\n", row->cfa().value(), row->cfa().offset());
+			objdump("DW_CFA_def_cfa: reg(%ld) %ld\n", row->cfa().value(), row->cfa().offset());
 			break;
 		}
 
@@ -1517,7 +1522,7 @@ private_parse_instruction(cfi_table_row *row,
 			auto cfa = row->cfa();
 			cfa.set_value(dwarf4::decode_uleb128(p));
 			row->set_cfa(cfa);
-			log("DW_CFA_def_cfa_register: reg(%ld)\n", row->cfa().value());
+			objdump("DW_CFA_def_cfa_register: reg(%ld)\n", row->cfa().value());
 			break;
 		}
 
@@ -1526,7 +1531,7 @@ private_parse_instruction(cfi_table_row *row,
 			auto cfa = row->cfa();
 			cfa.set_offset(static_cast<int64_t>(dwarf4::decode_uleb128(p)));
 			row->set_cfa(cfa);
-			log("DW_CFA_def_cfa_offset: %ld\n", row->cfa().offset());
+			objdump("DW_CFA_def_cfa_offset: %ld\n", row->cfa().offset());
 			break;
 		}
 
@@ -1636,7 +1641,7 @@ private_parse_instructions(cfi_table_row *row,
 		register_state *state,
 		bool is_cie)
 {
-	log("cie is %d\n", is_cie);
+	objdump("cie is %d\n", is_cie);
 	uint64_t pc_begin = is_cie ? 0 : fde.pc_begin();
 	uint64_t l1 = is_cie ? 0ULL : state->get_ip() - fde.pc_begin();
 	uint64_t l2 = 0ULL;
@@ -1661,8 +1666,25 @@ private_decode_cfi(const fd_entry &fde, register_state *state)
 	auto row = cfi_table_row();
 	const auto &cie = fde.cie();
 
+	print("<------------ pc: 0x%lx - 0x%lx ------------>\n", fde.pc_begin(), (fde.pc_begin() + fde.pc_range()));
+	// this outputs cie netry, stack pointer register and return instruction register...
+	// we output these information with function start addr
+	dwarfprint("0x%lx: ", fde.pc_begin());
+
+
 	private_parse_instructions(&row, cie, fde, state, true);
 	private_parse_instructions(&row, cie, fde, state, false);
+
+	// output last instruction of row of fde
+	// advance_loc
+	// ...(meta data)
+	// ...
+	// advanced_loc
+	// def_cfa_offset	<<= target
+	// cfa_offset		<<= target
+	// end
+	dwarfdump_regs(&row);
+
 
 	return row;
 }
@@ -1716,12 +1738,6 @@ void
 dwarf4::decode_cfi(const fd_entry &fde, register_state *state)
 {
 	auto row = private_decode_cfi(fde, state);
-	printf("-----------------------------------------\n");
-	row.dwarfdump_regs();
-	printf("-----------------------------------------\n");
-//	log("m_value 0x%lx\n", row.cfa().value()); // a register number
-//	log("m_offset 0x%lx\n", row.cfa().offset()); // cfa of a register number
-
 }
 
 #ifndef __clang__
