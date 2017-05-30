@@ -24,14 +24,28 @@
 
 #include <stdio.h>
 
-#define LOG
 #ifdef LOG
-#define log(...) printf(__VA_ARGS__);
+#define log(...)	printf(__VA_ARGS__);
 #else
-#define log(...)
+#define	log(...)
 #endif
 
+#define print(...)	printf(__VA_ARGS__);
+
+#ifdef OBJDUMP
+#define objdump(...)	printf(__VA_ARGS__);
+#define dwarfprint(...)
+#else	//dwarfdump
+#define dwarfprint(...)	printf(__VA_ARGS__);
+#define objdump(...)
+#endif
+
+#ifdef DEBUG
 #define debug(fmt, args...)	printf("%s: " fmt, __func__, ##args)
+#else
+#define debug(fmt, args...)	
+#endif
+
 #define alert(fmt, args...)	 printf("\x1b[31m");	\
 		printf("%s: " fmt, __func__, ##args);	\
 		printf("\x1b[0m")

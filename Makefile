@@ -8,6 +8,7 @@ SRCS += registers_intel_x64.o
 OBJS := $(SRCS:%.c=%.o)
 
 CXXFLAGS := -g -Wall -gdwarf-4 -std=gnu++14
+CXXFLAGS += -DDEBUG -DLOG #-DOBJDUMP
 
 all: $(PROG)
 $(PROG): $(OBJS)

@@ -101,16 +101,10 @@ int main()
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
 
 	for (auto itr = g_fde.begin(); itr != g_fde.end(); ++itr) {
-		log("------------------------------------\n");
+		// objdump or dwarfdump in this function
 		dwarf4::decode_cfi(*itr, state);
-		log("------------------------------------\n");
 	}
 
-	/*
-	g_fde[50].dump();
-	debug("above fde decoding\n");
-	dwarf4::decode_cfi(g_fde[50], state);
-	*/
 	return 0;
 }
 
