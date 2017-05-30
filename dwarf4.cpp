@@ -198,7 +198,7 @@ private:
 
 
 // -----------------------------------------------------------------------------
-// NOTE[watanabe] dwarfdump helper
+// NOTE dwarfdump helper
 // -----------------------------------------------------------------------------
 //FIXME split dwarfdump member from this class and make a class dwarf dump
 void dwarfdump_regs(cfi_table_row *row)
@@ -1365,7 +1365,6 @@ private_parse_instruction(cfi_table_row *row,
 						  cfi_table_row *initialRow)
 {
 	(void) l1;
-	(void) pc_begin;
 	(void) state;
 
 	uint8_t opcode = *reinterpret_cast<uint8_t *>(*p) & 0xC0;
@@ -1422,6 +1421,9 @@ private_parse_instruction(cfi_table_row *row,
 
 		case DW_CFA_advance_loc1:
 		{
+			//previous instructions dump
+			dwarfdump_regs(row);
+
 			*l2 += get<uint8_t>(p) * cie.code_alignment();
 			//FIXME output is different from objdump regarding offset(*l2)
 			objdump("DW_CFA_advance_loc1: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
@@ -1432,14 +1434,20 @@ private_parse_instruction(cfi_table_row *row,
 
 		case DW_CFA_advance_loc2:
 		{
+			//previous instructions dump
+			dwarfdump_regs(row);
+
 			*l2 += get<uint16_t>(p) * cie.code_alignment();
 			//FIXME output is different from objdump regarding offset(*l2)
 			objdump("DW_CFA_advance_loc2: %ld to 0x%lx\n",*l2, (pc_begin + *l2));
+			dwarfprint("0x%lx: ", (pc_begin + *l2));
 			break;
 		}
 
 		case DW_CFA_advance_loc4:
 		{
+//			dwarfprint("0x%lx: ", (pc_begin + *l2));
+
 			*l2 += get<uint32_t>(p) * cie.code_alignment();
 			alert("DW_CFA_advance_loc4\n");
 			break;

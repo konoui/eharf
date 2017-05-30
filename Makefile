@@ -9,6 +9,7 @@ OBJS := $(SRCS:%.c=%.o)
 
 CXXFLAGS := -g -Wall -gdwarf-4 -std=gnu++14
 CXXFLAGS += -DDEBUG -DLOG #-DOBJDUMP
+CXXFLAGS += -DALERT
 
 all: $(PROG)
 $(PROG): $(OBJS)
