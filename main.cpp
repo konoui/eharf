@@ -34,7 +34,8 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 	const ElfW(Phdr) *eh_phdr = get_phdr(phdr, phnum, phentsize);
 	if (!eh_phdr) return;
 	uintptr_t eh_seg = base + eh_phdr->p_vaddr;
-	printf("EH_FRAME_SEGMENT: %p\n", (void *)eh_seg);
+	uintptr_t eh_seg_end = base + eh_phdr->p_vaddr + eh_phdr->p_memsz;
+	printf("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_seg, (void *)eh_seg_end);
 
 	struct eh_frame_hdr *eh_hdr = reinterpret_cast<eh_frame_hdr *>(eh_seg);
 
@@ -44,10 +45,8 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 	printf("enc 0x%lx\n", *enc);
 
 	uint64_t *result = (uint64_t *)decode_pointer(&enc, eh_frame_ptr_enc);
-	printf("result: 0x%lx\n", *result);
+	printf("result: 0x%lx\n", result);
 }
-
-
 
 // ----------------------------------------------------------
 
