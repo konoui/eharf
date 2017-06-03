@@ -41,37 +41,29 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 
 	printf("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_seg, (void *)eh_seg_end);
 
+	//End addr of eh_frame_hdr Segment maybe start addr of eh_frame section
+	// memory layout is continuous
+	// eh_frame_hdr
+	// eh_frame
 	g_offs = eh_seg_end;
 }
-
 // ----------------------------------------------------------
 
 
 static int
 callback(struct dl_phdr_info *info, size_t size, void *data)
 {
-		(void) size;
-		(void) data;
-		static auto once = false;
+	(void) size;
+	(void) data;
+	static auto once = false;
 
-		if (once) return 0;
-		once = true;
+	if (once) return 0;
+	once = true;
 
-		// for get eh_frame sections
-		eh_hdr_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
+	// for get eh_frame sections
+	eh_hdr_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
 
-/*
-		for (int i = 0; i < info->dlpi_phnum; i++)
-		{
-				if (info->dlpi_phdr[i].p_type == PT_LOAD)
-				{
-						g_offs = info->dlpi_addr;
-						break;
-				}
-		}
-*/
-
-		return 0;
+	return 0;
 }
 
 eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
@@ -84,38 +76,9 @@ extern "C" struct eh_frame_t *get_eh_frame_list() noexcept
 	return static_cast<struct eh_frame_t *>(g_eh_frame_list);
 }
 
-// not needed
-void parse_eh_frame_myself()
-{
-	g_size = 0;
-
-	std::stringstream eh_frame_offs_ss;
-	std::stringstream eh_frame_size_ss;
-
-	eh_frame_offs_ss << "readelf -SW /proc/" << getpid() << "/exe | grep \".eh_frame\" | grep -v \".eh_frame_hdr\" | awk '{print $4}' > offs.txt";
-	eh_frame_size_ss << "readelf -SW /proc/" << getpid() << "/exe | grep \".eh_frame\" | grep -v \".eh_frame_hdr\" | awk '{print $6}' > size.txt";
-
-	system(eh_frame_offs_ss.str().c_str());
-	system(eh_frame_size_ss.str().c_str());
-
-	auto &&offs_file = std::ifstream("offs.txt");
-	auto &&size_file = std::ifstream("size.txt");
-
-	auto &&offs_str = std::string((std::istreambuf_iterator<char>(offs_file)), std::istreambuf_iterator<char>());
-	auto &&size_str = std::string((std::istreambuf_iterator<char>(size_file)), std::istreambuf_iterator<char>());
-
-	std::remove("offs.txt");
-	std::remove("size.txt");
-
-	g_offs += std::stoull(offs_str, nullptr, 16);
-	g_size += std::stoull(size_str, nullptr, 16);
-}
-
 int main()
 {
 	dl_iterate_phdr(callback, nullptr);
-
-//	parse_eh_frame_myself();
 
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
@@ -134,7 +97,6 @@ int main()
 //		fde.dump();
 	}
 
-//	register_state *state = new register_state();
 	struct registers_intel_x64_t registers = { };
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
 
