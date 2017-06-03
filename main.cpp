@@ -12,6 +12,46 @@
 #include "eh_frame_list.h"
 
 #include "eh_frame.h"
+#include "eh_frame_hdr.h"
+
+// ----------------------------------------------------------
+#include <sys/auxv.h>
+static const ElfW(Phdr) *get_phdr(const ElfW(Phdr) *phdr, uint16_t phnum, uint16_t phentsize) {
+
+	for (int i = 0; i < phnum; i++) {
+		if (phdr->p_type == PT_GNU_EH_FRAME) {
+			return phdr;
+		}
+
+		phdr = (ElfW(Phdr) *)((char *)phdr + phentsize);
+	}
+
+	return NULL;
+}
+
+static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum, int16_t phentsize)
+{
+	const ElfW(Phdr) *eh_phdr = get_phdr(phdr, phnum, phentsize);
+	if (!eh_phdr) return;
+	uintptr_t eh_seg = base + eh_phdr->p_vaddr;
+	printf("EH_FRAME_SEGMENT: %p\n", (void *)eh_seg);
+
+	struct eh_frame_hdr *eh_hdr = reinterpret_cast<eh_frame_hdr *>(eh_seg);
+
+	uint64_t eh_frame_ptr_enc = 0x0 | eh_hdr->eh_frame_ptr_enc;
+	char *enc = (char *)eh_hdr->enc;
+	printf("eh_frame_ptr_enc: %d\n", eh_hdr->eh_frame_ptr_enc);
+	printf("enc 0x%lx\n", *enc);
+
+	uint64_t *result = (uint64_t *)decode_pointer(&enc, eh_frame_ptr_enc);
+	printf("result: 0x%lx\n", *result);
+}
+
+
+
+// ----------------------------------------------------------
+
+
 
 uintptr_t g_offs = 0;
 uintptr_t g_size = 0;
@@ -25,6 +65,9 @@ callback(struct dl_phdr_info *info, size_t size, void *data)
 
     if (once) return 0;
     once = true;
+
+    // GNU_EH_FRAME eh_frame_hdr
+    eh_hdr_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
 
     for (int i = 0; i < info->dlpi_phnum; i++)
     {
@@ -79,6 +122,8 @@ int main()
 
 //	std::cout << std::hex << g_offs << std::endl;
 //	std::cout << std::hex << g_size << std::endl;
+
+//	g_size = 0x10000000;
 
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
