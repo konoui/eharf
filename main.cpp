@@ -84,7 +84,6 @@ int main()
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 
-
 	std::vector<fd_entry> g_fde;
 	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
 		if(fde.is_cie()) {
@@ -104,6 +103,18 @@ int main()
 		// objdump or dwarfdump in this function
 		dwarf4::decode_cfi(*itr, state);
 	}
+	delete(state);
+
+	printf("registers: %p\n", &registers);
+	__store_registers_intel_x64(&registers);
+	state = new register_state_intel_x64(registers);
+	state->dump();
+	auto near_fde = eh_frame::find_fde(state);
+	near_fde.dump();
+
+	dwarf4::unwind(near_fde, state);
+	state->dump();
+	state->resume();
 
 	return 0;
 }
