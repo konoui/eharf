@@ -1766,8 +1766,10 @@ dwarf4::unwind(const fd_entry& fde, register_state *state)
 	{
 		auto reg = row.reg(i);
 
-		if (reg.rule() == rule_undefined)
+		if (reg.rule() == rule_undefined) {
+			debug("rule_undefined %d\n", i);
 			continue;
+		}
 
 		state->set(i, private_decode_reg(reg, cfa, state));
 	}
