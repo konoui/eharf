@@ -412,6 +412,7 @@ eh_frame::find_fde(register_state *state)
 {
 	auto eh_frame_list = get_eh_frame_list();
 
+	//TODO (auto m = 0U; eh_frame[m].addr != nullptr; m++)
 	for (auto m = 0U; m < MAX_NUM_MODULES; m++)
 	{
 		for (auto fde = fd_entry(eh_frame_list[m]); fde; ++fde)

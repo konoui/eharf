@@ -14,8 +14,30 @@
 #include "eh_frame.h"
 
 #define	MAX_EH_FRAME_SIZE	0x100000
-uintptr_t g_offs = 0;
-uintptr_t g_size = MAX_EH_FRAME_SIZE;
+eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
+
+// TODO make class
+extern "C" struct eh_frame_t *get_eh_frame_list() noexcept
+{
+	return static_cast<struct eh_frame_t *>(g_eh_frame_list);
+}
+
+extern "C" void set_eh_frame(uintptr_t eh_addr, uintptr_t eh_size) noexcept
+{
+	static size_t idx = 0;
+	g_eh_frame_list[idx].addr = reinterpret_cast<void *>(eh_addr);
+	g_eh_frame_list[idx].size = eh_size;
+	idx++;
+}
+
+void dump_eh_frame_list()
+{
+	struct eh_frame_t *eh_frame = get_eh_frame_list();
+	for (auto i = 0U; eh_frame[i].addr != nullptr; i++)
+	{
+		printf("eh_frame[%d].addr: %p\n", i, eh_frame[i].addr);
+	}
+}
 
 // ----------------------------------------------------------
 #include <sys/auxv.h>
@@ -45,7 +67,7 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 	// memory layout is continuous
 	// eh_frame_hdr
 	// eh_frame
-	g_offs = eh_seg_end;
+	set_eh_frame(eh_seg_end, MAX_EH_FRAME_SIZE);
 }
 // ----------------------------------------------------------
 
@@ -55,25 +77,11 @@ callback(struct dl_phdr_info *info, size_t size, void *data)
 {
 	(void) size;
 	(void) data;
-	static auto once = false;
-
-	if (once) return 0;
-	once = true;
 
 	// for get eh_frame sections
 	eh_hdr_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
 
 	return 0;
-}
-
-eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
-
-extern "C" struct eh_frame_t *get_eh_frame_list() noexcept
-{
-	g_eh_frame_list[0].addr = reinterpret_cast<void *>(g_offs);
-	g_eh_frame_list[0].size = g_size;
-
-	return static_cast<struct eh_frame_t *>(g_eh_frame_list);
 }
 
 int main()
@@ -115,6 +123,8 @@ int main()
 	dwarf4::unwind(near_fde, state);
 	state->dump();
 	state->resume();
+
+	dump_eh_frame_list();
 
 	return 0;
 }
