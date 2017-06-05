@@ -1,0 +1,3 @@
+[submodule "kdmp"]
+	path = kdmp
+	url = git@github.com:ouiouiouioui/kdmp.git
