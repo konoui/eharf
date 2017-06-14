@@ -1745,7 +1745,7 @@ dwarf4::decode_uleb128(char **addr)
 void
 dwarf4::decode_cfi(const fd_entry &fde, register_state *state)
 {
-	auto row = private_decode_cfi(fde, state);
+	private_decode_cfi(fde, state);
 }
 
 #ifndef __clang__
