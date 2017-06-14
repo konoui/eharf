@@ -81,14 +81,19 @@ callback(struct dl_phdr_info *info, size_t size, void *data)
 	return 0;
 }
 
+void set_all_eh_frame(void)
+{
+	//FIXME called in the kernel, parse mm->vm_start and get address of eh_frame_hdr + size
+	dl_iterate_phdr(callback, nullptr);
+}
+
 int main()
 {
-	dl_iterate_phdr(callback, nullptr);
 
-	struct eh_frame_t *eh_frame = get_eh_frame_list();
-	(void)eh_frame;
+	set_all_eh_frame();
 
 	dump_eh_frame_list();
+
 	//-------------------------
 	struct vma *vma = get_vma_from_kernel();
 
