@@ -13,6 +13,8 @@
 
 #include "eh_frame.h"
 
+#include "kdmp/agent.h"
+
 #define	MAX_EH_FRAME_SIZE	0x100000
 eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
 
@@ -91,7 +93,12 @@ int main()
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
 	debug("eh_frame.addr: %p\n", eh_frame->addr);
 	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
+	(void)eh_frame;
 
+	struct registers_intel_x64_t registers = { };
+	register_state_intel_x64 *state = new register_state_intel_x64(registers);
+
+	/*
 	std::vector<fd_entry> g_fde;
 	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
 		if(fde.is_cie()) {
@@ -104,14 +111,13 @@ int main()
 //		fde.dump();
 	}
 
-	struct registers_intel_x64_t registers = { };
-	register_state_intel_x64 *state = new register_state_intel_x64(registers);
 
 	for (auto itr = g_fde.begin(); itr != g_fde.end(); ++itr) {
 		// objdump or dwarfdump in this function
 		dwarf4::decode_cfi(*itr, state);
 	}
 	delete(state);
+	*/
 
 	printf("registers: %p\n", &registers);
 	__store_registers_intel_x64(&registers);
@@ -122,9 +128,12 @@ int main()
 
 	dwarf4::unwind(near_fde, state);
 	state->dump();
-	state->resume();
+//	state->resume();
 
 	dump_eh_frame_list();
+
+	struct vma *vma = get_vma_from_kernel();
+	dump_vma(*vma);
 
 	return 0;
 }
