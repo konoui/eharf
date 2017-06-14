@@ -46,7 +46,7 @@ __load_registers_intel_x64:
 
     movq 0x38(%rdi), %rsp
 
-    movq 0x80(%rdi), %rax
+    movq 0x80(%rdi), %rax //state->rip
     pushq %rax
 
     movq 0x00(%rdi), %rax

@@ -1,11 +1,6 @@
 #include <link.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <vector>
 
 #include "registers_intel_x64.h"
 #include "dwarf4.h"
@@ -37,7 +32,7 @@ void dump_eh_frame_list()
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
 	for (auto i = 0U; eh_frame[i].addr != nullptr; i++)
 	{
-		printf("eh_frame[%d].addr: %p\n", i, eh_frame[i].addr);
+		log("eh_frame[%d].addr: %p\n", i, eh_frame[i].addr);
 	}
 }
 
@@ -63,7 +58,7 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 	uintptr_t eh_hdr_seg = base + eh_phdr->p_vaddr;
 	uintptr_t eh_hdr_seg_end = base + eh_phdr->p_vaddr + eh_phdr->p_memsz;
 
-	printf("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_hdr_seg, (void *)eh_hdr_seg_end);
+	log("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_hdr_seg, (void *)eh_hdr_seg_end);
 
 	//End addr of eh_frame_hdr Segment maybe start addr of eh_frame section
 	// memory layout is continuous

@@ -7,7 +7,7 @@ SRCS += ia64_cxx_abi.o
 SRCS += registers_intel_x64.o
 OBJS := $(SRCS:%.c=%.o)
 
-CXXFLAGS := -g -Wall -gdwarf-4 -std=gnu++14
+CXXFLAGS := -g -Wall -gdwarf-4 -std=gnu++11
 CXXFLAGS += -DLOG #-DOBJDUMP
 CXXFLAGS += -DALERT #-DDEBUG
 
