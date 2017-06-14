@@ -22,7 +22,7 @@
 #ifndef EH_FRAME_H
 #define EH_FRAME_H
 
-#define MAX_NUM_MODULES	100
+#define MAX_NUM_MODULES	15
 
 #include <stdint.h>
 //#include <constants.h>

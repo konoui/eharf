@@ -60,16 +60,16 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 {
 	const ElfW(Phdr) *eh_phdr = get_phdr(phdr, phnum, phentsize);
 	if (!eh_phdr) return;
-	uintptr_t eh_seg = base + eh_phdr->p_vaddr;
-	uintptr_t eh_seg_end = base + eh_phdr->p_vaddr + eh_phdr->p_memsz;
+	uintptr_t eh_hdr_seg = base + eh_phdr->p_vaddr;
+	uintptr_t eh_hdr_seg_end = base + eh_phdr->p_vaddr + eh_phdr->p_memsz;
 
-	printf("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_seg, (void *)eh_seg_end);
+	printf("EH_FRAME_SEGMENT: %p - %p\n", (void *)eh_hdr_seg, (void *)eh_hdr_seg_end);
 
 	//End addr of eh_frame_hdr Segment maybe start addr of eh_frame section
 	// memory layout is continuous
 	// eh_frame_hdr
 	// eh_frame
-	set_eh_frame(eh_seg_end, MAX_EH_FRAME_SIZE);
+	set_eh_frame(eh_hdr_seg_end, MAX_EH_FRAME_SIZE);
 }
 // ----------------------------------------------------------
 
@@ -91,48 +91,29 @@ int main()
 	dl_iterate_phdr(callback, nullptr);
 
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
-	debug("eh_frame.addr: %p\n", eh_frame->addr);
-	debug("eh_frame.size: 0x%lx\n", eh_frame->size);
 	(void)eh_frame;
+
+	dump_eh_frame_list();
+	//-------------------------
+	struct vma *vma = get_vma_from_kernel();
 
 	struct registers_intel_x64_t registers = { };
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
 
-	/*
-	std::vector<fd_entry> g_fde;
-	for (auto fde = fd_entry(*eh_frame); fde; ++fde) {
-		if(fde.is_cie()) {
-			auto cie = ci_entry(*eh_frame, fde.entry_start());
-//			cie.dump();
-			continue;
-		}
-
-		g_fde.push_back(fde);
-//		fde.dump();
-	}
-
-
-	for (auto itr = g_fde.begin(); itr != g_fde.end(); ++itr) {
-		// objdump or dwarfdump in this function
-		dwarf4::decode_cfi(*itr, state);
-	}
-	delete(state);
-	*/
-
-	printf("registers: %p\n", &registers);
 	__store_registers_intel_x64(&registers);
 	state = new register_state_intel_x64(registers);
 	state->dump();
-	auto near_fde = eh_frame::find_fde(state);
-	near_fde.dump();
 
-	dwarf4::unwind(near_fde, state);
-	state->dump();
+	do {
+		auto near_fde = eh_frame::find_fde(state);
+		near_fde.dump();
+		dwarf4::unwind(near_fde, state);
+		state->dump();
+		// TODO if (start_stack - 8) eq get_sp(),  is this always correct?
+	} while (vma->start_stack - 8 > state->get_sp()); // if stack top, unwinding complete success
+
 //	state->resume();
 
-	dump_eh_frame_list();
-
-	struct vma *vma = get_vma_from_kernel();
 	dump_vma(*vma);
 
 	return 0;
