@@ -116,8 +116,6 @@ int main()
 
 	dump_vma(vma);
 
-
-	sleep(0x100000);
 	return 0;
 }
 
