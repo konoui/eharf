@@ -95,7 +95,7 @@ int main()
 	dump_eh_frame_list();
 
 	//-------------------------
-	struct vma *vma = get_vma_from_kernel();
+	struct vma *vma = get_vma_lists();
 
 	struct registers_intel_x64_t registers = { };
 	register_state_intel_x64 *state = new register_state_intel_x64(registers);
@@ -110,12 +110,14 @@ int main()
 		dwarf4::unwind(near_fde, state);
 		state->dump();
 		// TODO if (start_stack - 8) eq get_sp(),  is this always correct?
-	} while (vma->start_stack - 8 > state->get_sp()); // if stack top, unwinding complete success
+	} while (vma->stack_seg.start - 8 > state->get_sp()); // if stack top, unwinding complete success
 
 //	state->resume();
 
-	dump_vma(*vma);
+	dump_vma(vma);
 
+
+	sleep(0x100000);
 	return 0;
 }
 
