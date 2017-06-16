@@ -74,12 +74,12 @@ bool do_check(struct vma *vma, register_state *state)
 
 		//TODO pointer?
 		struct eh_frame_t *eh_frame = get_eh_frame(code_seg);
+		uint64_t start_stack = vma->stack_seg.start;
+		uint64_t end_stack   = vma->stack_seg.end;
 
 		do {
 			uint64_t rip = state->get_ip();
 			uint64_t rsp = state->get_sp();
-			uint64_t start_stack = vma->stack_seg.start;
-			uint64_t end_stack   = vma->stack_seg.end;
 
 			if (rsp < end_stack || start_stack < rsp) { // stack pivot
 				log("stack pivot detect ");
@@ -92,12 +92,13 @@ bool do_check(struct vma *vma, register_state *state)
 				unwind_depth += 1;
 			}
 			else {
+				log("go to next\n");
 				break; //go to next code_seg e.g.) binary eh_frame ==> library eh_frame
 			}
 
 			fde = eh_frame::find_fde(state, *eh_frame);
 			dwarf4::unwind(fde, state);
-			fde.dump();
+//			fde.dump();
 			state->dump();
 
 			if (start_stack-8 <= state->get_sp()) {
@@ -106,7 +107,7 @@ bool do_check(struct vma *vma, register_state *state)
 			}
 
 		//FIXME
-		} while (!fde);
+		} while (fde);
 	}
 
 	log("where\n");
