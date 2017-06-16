@@ -75,6 +75,7 @@ static void code_seg_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phn
 	if (once) {
 		INIT_LIST_HEAD(&g_vma.code_seg.list);
 		INIT_LIST_HEAD(&g_vma.stack_seg.list);
+		get_vma_from_kernel(&g_vma, SET_HEAD_VMA);
 	}
 	once = false;
 
@@ -84,7 +85,6 @@ static void code_seg_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phn
 	for (i = 0; i < phnum; i++) {
 		if(phdr[i].p_type == PT_LOAD) {
 			if(phdr[i].p_flags & PF_X) {
-				printf("done\n");
 				code_seg = new struct code_seg;
 				list_add_tail(&code_seg->list, &code_seg_head->list);
 				code_seg->start = (uint64_t)(base + phdr[i].p_vaddr);
