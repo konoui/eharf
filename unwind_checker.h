@@ -14,11 +14,10 @@
 // FSI
 
 // FLOW
-// Kernelのtask_structのmmのmmapの内，X segmentsのものを取得するこれをVMAと定義する
-// 現在のRIP(RIPとはリターンアドレスのこと？)を取得
-// 対応するVMAを取得しチェックする
-// VMAからEH_FRAMEを取得する
-// Unwindingと，チェックをする
+// pgdを共通するプロセスにおける，構造体をvmaと定義する
+// vma構造体には，プログラムやライブラリの実行可能領域を表す構造体を持つ．これをcode_segと定義する．code_segは，双方向リンクリストとなっている．
+// 共通のpgdを持ちながら，異なるスタックを利用する可能性がある(マルチスレッド).そのため，vma構造体はスタックを双方リンクリストとして持つ．
+// clone(2)をフックし，vma構造体に追加する必要がある．
 
 struct code_seg *get_code_seg_from_vma(struct vma *vma, uint64_t rip)
 {
@@ -72,7 +71,6 @@ bool do_check(struct vma *vma, register_state *state)
 			}
 		}
 
-		//TODO pointer?
 		struct eh_frame_t *eh_frame = get_eh_frame(code_seg);
 		uint64_t start_stack = vma->stack_seg.start;
 		uint64_t end_stack   = vma->stack_seg.end;
@@ -88,6 +86,7 @@ bool do_check(struct vma *vma, register_state *state)
 				return false;
 			}
 
+			// NOTE check return address is a executable?
 			if (code_seg->start < rip && rip < code_seg->end) {
 				unwind_depth += 1;
 			}
@@ -102,11 +101,10 @@ bool do_check(struct vma *vma, register_state *state)
 			state->dump();
 
 			if (start_stack-8 <= state->get_sp()) {
-				printf("reach botton of the stack success\n");
+				printf("reach botton of the stack, success\n");
 				return true;
 			}
 
-		//FIXME
 		} while (fde);
 	}
 

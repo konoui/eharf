@@ -144,7 +144,7 @@ int main()
 
 	dump_vma(vma);
 
-	auto ret = do_check(vma, state);
+	auto ret = do_check(&g_vma, state);
 	log("ret: %d\n", ret);
 
 	/*
