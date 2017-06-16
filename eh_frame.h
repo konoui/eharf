@@ -208,6 +208,7 @@ class eh_frame
 {
 public:
 	static fd_entry find_fde(register_state *state);
+	static fd_entry find_fde(register_state *state, eh_frame_t eh_frame);
 };
 
 /// Common Entry

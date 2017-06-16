@@ -1,4 +1,11 @@
+#ifndef UNWIND_CHECKER_H
+#define UNWIND_CHECKER_H
+
 #include "kdmp/kdmp.h"
+#include "eh_frame.h"
+#include "registers_intel_x64.h"
+#include "dwarf4.h"
+#include "eh_frame_list.h"
 
 // COUNTERMEASURE
 // return address points to executable vma?
@@ -13,41 +20,52 @@
 // VMAからEH_FRAMEを取得する
 // Unwindingと，チェックをする
 
-struct vma *get_vma(uint64_t rip)
+struct code_seg *get_code_seg_from_vma(struct vma *vma, uint64_t rip)
 {
-	do {
-		if (vma->code_seg.start < rip && rip < vma->code_seg.end)
-			return vma;
+	struct code_seg *code_seg;
+	struct list_head *pos;
 
-		vma = vma->next;
-	} while (vma != NULL);
+	list_for_each(pos, &vma->code_seg.list) {
+		code_seg = list_entry(pos, struct code_seg, list);
+		if (code_seg->start < rip && rip < code_seg->end) {
+			return code_seg;
+		}
+	}	
 
 	return NULL;
 }
 
-struct eh_frame get_eh_frame(struct *vma)
+struct eh_frame_t *get_eh_frame(struct code_seg *code_seg)
 {
-	int i;
-	for (i = 0; i < MAX_NUM_MODULE; i++) {
-		if (vma->code_seg.start < eh_frame_list[i] && eh_frame_list[i] < vma->code_seg.end) {
-			return eh_frame_list[i];
+	auto eh_frame_list = get_eh_frame_list();
+
+	for (int i = 0; i < MAX_NUM_MODULES; i++) {
+		if (code_seg->start < (uint64_t)eh_frame_list[i].addr && 
+		    (uint64_t)eh_frame_list[i].addr < code_seg->end) {
+			return &eh_frame_list[i];
 		}
 	}
 
 	// BUG, not found eh_frame
 	// この関数が呼ばれる前に，VMAの検証をしているのでここには到達しない
-	return 0;
+	return nullptr;
 }
 
-void do_check(void)
+// FIXME state is need? betther than getint into this function
+bool do_check(struct vma *vma, register_state *state)
 {
-	while (true) {
-		vma = get_vma(state->get_ip());
+	struct code_seg *code_seg;
+	uint64_t unwind_depth = 0;
+	fd_entry fde;
 
-		if (vma != NULL) {
+	while (true) {
+		code_seg = get_code_seg_from_vma(vma, state->get_ip());
+
+		if (code_seg == NULL) {
 			//from kernel, not executable or new library is loaded
-			vma = get_new_x_vma()
-			if (vma == NULL) {
+			//vma = get_new_vma_from_kernel();
+			code_seg = get_code_seg_from_vma(vma, state->get_ip());
+			if (code_seg == NULL) {
 				//failed, maybe not executalbe
 				//FIXME Flexible Insepect for start_stack
 				return false;
@@ -55,39 +73,44 @@ void do_check(void)
 		}
 
 		//TODO pointer?
-		struct eh_frame eh_frame = get_eh_frame(vma);
+		struct eh_frame_t *eh_frame = get_eh_frame(code_seg);
 
 		do {
 			uint64_t rip = state->get_ip();
 			uint64_t rsp = state->get_sp();
+			uint64_t start_stack = vma->stack_seg.start;
+			uint64_t end_stack   = vma->stack_seg.end;
 
-			if (rsp < STACK_START || rsp < STACK_END) { // stack pivot
+			if (rsp < end_stack || start_stack < rsp) { // stack pivot
+				log("stack pivot detect ");
+				log("rsp: 0x%lx start: 0x%lx end: 0x%lx\n", 
+				     rsp, start_stack, end_stack);
 				return false;
 			}
 
-			if (vma->code_seg.start < rsp && rsp < vma->code_seg.end) {
+			if (code_seg->start < rip && rip < code_seg->end) {
 				unwind_depth += 1;
 			}
 			else {
-				break; //go to next vma e.g.) binary eh_frame ==> library eh_frame
+				break; //go to next code_seg e.g.) binary eh_frame ==> library eh_frame
 			}
 
-			auto fde = eh_frame::find_fde(state);
+			fde = eh_frame::find_fde(state, *eh_frame);
 			dwarf4::unwind(fde, state);
 			fde.dump();
 			state->dump();
 
-			if (vma->stack_seg.start-8 =< state->get_sp()) {
+			if (start_stack-8 <= state->get_sp()) {
+				printf("reach botton of the stack success\n");
 				return true;
 			}
 
 		//FIXME
 		} while (!fde);
+	}
 
 	log("where\n");
 	return true;
-	}
-
 }
 
-
+#endif

@@ -119,6 +119,7 @@ void set_all_eh_frame(void)
 	dl_iterate_phdr(callback, nullptr);
 }
 
+#include "unwind_checker.h"
 int main()
 {
 
@@ -136,6 +137,17 @@ int main()
 	state = new register_state_intel_x64(registers);
 	state->dump();
 
+	struct code_seg *code_seg = get_code_seg_from_vma(vma, state->get_ip());
+	struct eh_frame_t *eh_frame = get_eh_frame(code_seg);
+	log("code_seg: %lx - %lx\n", code_seg->start, code_seg->end);
+	log("eh_frame: %lx - %lx\n", (uint64_t)eh_frame->addr, (uint64_t)eh_frame->size);
+
+	dump_vma(vma);
+
+	auto ret = do_check(vma, state);
+	log("ret: %d\n", ret);
+
+	/*
 	do {
 		auto near_fde = eh_frame::find_fde(state);
 		near_fde.dump();
@@ -144,11 +156,11 @@ int main()
 		// TODO if (start_stack - 8) eq get_sp(),  is this always correct?
 	} while (vma->stack_seg.start - 8 > state->get_sp()); // if stack top, unwinding complete success
 
+	*/
 //	state->resume();
 
-	dump_vma(vma);
 
-	dump_vma(&g_vma);
+//	dump_vma(&g_vma);
 
 	return 0;
 }

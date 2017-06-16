@@ -435,3 +435,29 @@ eh_frame::find_fde(register_state *state)
 
 	return fd_entry();
 }
+
+fd_entry
+eh_frame::find_fde(register_state *state, eh_frame_t eh_frame)
+{
+
+	for (auto fde = fd_entry(eh_frame); fde; ++fde)
+	{
+		if (fde.is_cie())
+			continue;
+
+		if (fde.is_in_range(state->get_ip()))
+			return fde;
+	}
+
+	log("ERROR: An exception was thrown, but the unwinder was unable to "
+		"locate a stack frame for RIP = %p. Possible reasons include\n",
+		reinterpret_cast<void *>(state->get_ip()));
+	log("  - Throwing from a destructor\n");
+	log("  - Throwing from a function labeled noexcept\n");
+	log("  - Bug in the unwinder\n");
+	log("\n\nAborting!!!\n\n")
+
+	state->dump();
+
+	return fd_entry();
+}
