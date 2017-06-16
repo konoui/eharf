@@ -12,6 +12,7 @@
 
 #define	MAX_EH_FRAME_SIZE	0x100000
 eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
+struct vma g_vma;
 
 // TODO make class
 extern "C" struct eh_frame_t *get_eh_frame_list() noexcept
@@ -66,6 +67,34 @@ static void eh_hdr_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum
 	// eh_frame
 	set_eh_frame(eh_hdr_seg_end, MAX_EH_FRAME_SIZE);
 }
+
+static void code_seg_parser(ElfW(Addr) base, const ElfW(Phdr) *phdr, int16_t phnum, int16_t phentsize)
+{
+	int i;
+	static bool once = true;
+	if (once) {
+		INIT_LIST_HEAD(&g_vma.code_seg.list);
+		INIT_LIST_HEAD(&g_vma.stack_seg.list);
+	}
+	once = false;
+
+	struct code_seg *code_seg_head, *code_seg;
+	code_seg_head = &g_vma.code_seg;
+
+	for (i = 0; i < phnum; i++) {
+		if(phdr[i].p_type == PT_LOAD) {
+			if(phdr[i].p_flags & PF_X) {
+				printf("done\n");
+				code_seg = new struct code_seg;
+				list_add_tail(&code_seg->list, &code_seg_head->list);
+				code_seg->start = (uint64_t)(base + phdr[i].p_vaddr);
+				code_seg->end = (uint64_t)(base + phdr[i].p_vaddr + phdr[i].p_memsz);
+				code_seg = list_entry(code_seg->list.next, struct code_seg, list);
+			}
+		}
+	}
+
+	}
 // ----------------------------------------------------------
 
 
@@ -77,6 +106,9 @@ callback(struct dl_phdr_info *info, size_t size, void *data)
 
 	// for get eh_frame sections
 	eh_hdr_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
+
+	// for g_vma
+	code_seg_parser(info->dlpi_addr, info->dlpi_phdr, info->dlpi_phnum, getauxval(AT_PHENT));
 
 	return 0;
 }
@@ -115,6 +147,8 @@ int main()
 //	state->resume();
 
 	dump_vma(vma);
+
+	dump_vma(&g_vma);
 
 	return 0;
 }

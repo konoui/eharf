@@ -13,8 +13,6 @@
 // VMAからEH_FRAMEを取得する
 // Unwindingと，チェックをする
 
-
-
 struct vma *get_vma(uint64_t rip)
 {
 	do {
