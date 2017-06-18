@@ -5,10 +5,10 @@
 #include "registers_intel_x64.h"
 #include "dwarf4.h"
 #include "eh_frame_list.h"
-
 #include "eh_frame.h"
-
 #include "kdmp/agent.h"
+
+#include <string.h>
 
 #define	MAX_EH_FRAME_SIZE	0x100000
 eh_frame_t g_eh_frame_list[100] = {{nullptr, 0}};
@@ -120,7 +120,7 @@ void set_all_eh_frame(void)
 }
 
 #include "unwind_checker.h"
-int main()
+int main(int argc, char **argv)
 {
 
 	set_all_eh_frame();
@@ -144,9 +144,14 @@ int main()
 
 	dump_vma(vma);
 
-	auto ret = do_check(&g_vma, state);
-	log("ret: %d\n", ret);
+	//attack test
+//	char buf[10];
+//	strcpy(buf, argv[1]);
 
+	if (!do_check(&g_vma, state)) {
+		log("attack detect, exit\n");
+		exit(1);
+	}
 	/*
 	do {
 		auto near_fde = eh_frame::find_fde(state);

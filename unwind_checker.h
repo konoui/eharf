@@ -19,7 +19,7 @@
 // 共通のpgdを持ちながら，異なるスタックを利用する可能性がある(マルチスレッド).そのため，vma構造体はスタックを双方リンクリストとして持つ．
 // clone(2)をフックし，vma構造体に追加する必要がある．
 
-struct code_seg *get_code_seg_from_vma(struct vma *vma, uint64_t rip)
+static inline struct code_seg *get_code_seg_from_vma(struct vma *vma, uint64_t rip)
 {
 	struct code_seg *code_seg;
 	struct list_head *pos;
@@ -34,7 +34,7 @@ struct code_seg *get_code_seg_from_vma(struct vma *vma, uint64_t rip)
 	return NULL;
 }
 
-struct eh_frame_t *get_eh_frame(struct code_seg *code_seg)
+static inline struct eh_frame_t *get_eh_frame(struct code_seg *code_seg)
 {
 	auto eh_frame_list = get_eh_frame_list();
 
@@ -50,12 +50,20 @@ struct eh_frame_t *get_eh_frame(struct code_seg *code_seg)
 	return nullptr;
 }
 
+static inline bool get_next_state(struct register_state *state, struct eh_frame_t *eh_frame)
+{
+	auto fde = eh_frame::find_fde(state, *eh_frame);
+	dwarf4::unwind(fde, state);
+//	fde.dump();
+	state->dump();
+	return (!!fde);
+}
+
 // FIXME state is need? betther than getint into this function
 bool do_check(struct vma *vma, register_state *state)
 {
 	struct code_seg *code_seg;
 	uint64_t unwind_depth = 0;
-	fd_entry fde;
 
 	while (true) {
 		code_seg = get_code_seg_from_vma(vma, state->get_ip());
@@ -96,17 +104,18 @@ bool do_check(struct vma *vma, register_state *state)
 				break; //go to next code_seg e.g.) binary eh_frame ==> library eh_frame
 			}
 
-			fde = eh_frame::find_fde(state, *eh_frame);
-			dwarf4::unwind(fde, state);
-//			fde.dump();
-			state->dump();
+			if (!get_next_state(state, eh_frame)) { //unwinfind
+				log("not found next state\n");
+				exit(1); // test
+				break; // fde is null;
+			}
 
 			if (start_stack-8 <= state->get_sp()) {
 				printf("reach botton of the stack, success\n");
 				return true;
 			}
 
-		} while (fde);
+		} while (true);
 	}
 
 	log("where\n");
