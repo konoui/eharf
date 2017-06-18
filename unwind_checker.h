@@ -67,6 +67,7 @@ bool do_check(struct vma *vma, register_state *state)
 			if (code_seg == NULL) {
 				//failed, maybe not executalbe
 				//FIXME Flexible Insepect for start_stack
+				log("no executable area, stack corruption\n");
 				return false;
 			}
 		}
