@@ -282,14 +282,12 @@ ci_entry::non_virtual_parse(char *addr)
 	m_data_alignment = dwarf4::decode_sleb128(&p);
 	m_return_address_reg = dwarf4::decode_uleb128(&p);
 
-//	debug("m_augmentation_string[0]: %c\n", m_augmentation_string[0]);
 	if (m_augmentation_string[0] == 'z')
 	{
 		auto len = dwarf4::decode_uleb128(&p);
 
 		for (auto i = 1U; m_augmentation_string[i] != 0 && i <= len; i++)
 		{
-//			debug("m_augmentation_string[i]: %c\n", m_augmentation_string[i]);
 			switch (m_augmentation_string[i])
 			{
 				case 'L':
@@ -412,6 +410,7 @@ eh_frame::find_fde(register_state *state)
 {
 	auto eh_frame_list = get_eh_frame_list();
 
+	//TODO (auto m = 0U; eh_frame[m].addr != nullptr; m++)
 	for (auto m = 0U; m < MAX_NUM_MODULES; m++)
 	{
 		for (auto fde = fd_entry(eh_frame_list[m]); fde; ++fde)
@@ -422,6 +421,32 @@ eh_frame::find_fde(register_state *state)
 			if (fde.is_in_range(state->get_ip()))
 				return fde;
 		}
+	}
+
+	log("ERROR: An exception was thrown, but the unwinder was unable to "
+		"locate a stack frame for RIP = %p. Possible reasons include\n",
+		reinterpret_cast<void *>(state->get_ip()));
+	log("  - Throwing from a destructor\n");
+	log("  - Throwing from a function labeled noexcept\n");
+	log("  - Bug in the unwinder\n");
+	log("\n\nAborting!!!\n\n")
+
+	state->dump();
+
+	return fd_entry();
+}
+
+fd_entry
+eh_frame::find_fde(register_state *state, eh_frame_t eh_frame)
+{
+
+	for (auto fde = fd_entry(eh_frame); fde; ++fde)
+	{
+		if (fde.is_cie())
+			continue;
+
+		if (fde.is_in_range(state->get_ip()))
+			return fde;
 	}
 
 	log("ERROR: An exception was thrown, but the unwinder was unable to "

@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 
+//instead of printf
 #ifdef LOG
 #define log(...)	printf(__VA_ARGS__);
 #else

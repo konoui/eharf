@@ -107,6 +107,9 @@ public:
 	uint64_t get_ip() const override
 	{ return m_registers.rip; }
 
+	uint64_t get_sp() const override
+	{ return m_registers.rsp; }
+
 	register_state &set_ip(uint64_t value) override
 	{
 		m_tmp_registers.rip = value;

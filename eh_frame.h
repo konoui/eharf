@@ -22,7 +22,7 @@
 #ifndef EH_FRAME_H
 #define EH_FRAME_H
 
-#define MAX_NUM_MODULES	100
+#define MAX_NUM_MODULES	15
 
 #include <stdint.h>
 //#include <constants.h>
@@ -208,6 +208,7 @@ class eh_frame
 {
 public:
 	static fd_entry find_fde(register_state *state);
+	static fd_entry find_fde(register_state *state, eh_frame_t eh_frame);
 };
 
 /// Common Entry
@@ -326,12 +327,12 @@ public:
 	{ return m_eh_frame; }
 
 	void dump() {
-		printf("m_eh_frame %p size: 0x%lx\n", m_eh_frame.addr, m_eh_frame.size);
-		printf("m_is_cie: %d\n", m_is_cie);
-		printf("m_entry_start: %p\n", m_entry_start);
-		printf("m_entry_end: %p\n", m_entry_end);
-		printf("m_payload_start %p\n", m_payload_start);
-		printf("m_payload_end %p\n", m_payload_end);
+		log("m_eh_frame %p size: 0x%lx\n", m_eh_frame.addr, m_eh_frame.size);
+		log("m_is_cie: %d\n", m_is_cie);
+		log("m_entry_start: %p\n", m_entry_start);
+		log("m_entry_end: %p\n", m_entry_end);
+		log("m_payload_start %p\n", m_payload_start);
+		log("m_payload_end %p\n", m_payload_end);
 	}
 
 protected:
@@ -493,19 +494,19 @@ public:
 
 	void dump()
 	{ 
-		printf("---------------------------------------------------\n");
+		log("---------------------------------------------------\n");
 		common_entry::dump();
-		printf("m_augmentation_string: %p\n", m_augmentation_string);
-		printf("m_code_alignment: 0x%lx\n", m_code_alignment);
-		printf("m_data_alignment: 0x%lx\n", m_data_alignment);
-		printf("m_return_address_reg 0x%lx\n", m_return_address_reg);
-		printf("m_pointer_encoding: 0x%lx\n", m_pointer_encoding);
-		printf("m_lsda_encoding: 0x%lx\n", m_lsda_encoding);
-		printf("m_personality_encoding: 0x%lx\n", m_personality_encoding);
-		printf("m_personality_function: 0x%lx\n", m_personality_function);
-		printf("m_initial_instructions: %p\n", m_initial_instructions);
-//		printf("*m_initial_instructions: %c\n", *m_initial_instructions);
-		printf("---------------------------------------------------\n");
+		log("m_augmentation_string: %p\n", m_augmentation_string);
+		log("m_code_alignment: 0x%lx\n", m_code_alignment);
+		log("m_data_alignment: 0x%lx\n", m_data_alignment);
+		log("m_return_address_reg 0x%lx\n", m_return_address_reg);
+		log("m_pointer_encoding: 0x%lx\n", m_pointer_encoding);
+		log("m_lsda_encoding: 0x%lx\n", m_lsda_encoding);
+		log("m_personality_encoding: 0x%lx\n", m_personality_encoding);
+		log("m_personality_function: 0x%lx\n", m_personality_function);
+		log("m_initial_instructions: %p\n", m_initial_instructions);
+//		log("*m_initial_instructions: %c\n", *m_initial_instructions);
+		log("---------------------------------------------------\n");
 	}
 
 protected:
@@ -633,15 +634,15 @@ public:
 
 	void dump()
 	{ 
-		printf("---------------------------------------------------\n");
+		log("---------------------------------------------------\n");
 		common_entry::dump();
-		printf("m_pc_begin: 0x%lx\n", m_pc_begin);
-		printf("m_pc_range: 0x%lx\n", m_pc_range);
-		printf("m_lsda: 0x%lx\n", m_lsda);
-		printf("m_instructions: %p\n", m_instructions);
-		printf("m_cie.entry_start(): %p\n", m_cie.entry_start());
-//		printf("m_instructions: %c\n", *m_instructions);
-		printf("---------------------------------------------------\n");
+		log("m_pc_begin: 0x%lx\n", m_pc_begin);
+		log("m_pc_range: 0x%lx\n", m_pc_range);
+		log("m_lsda: 0x%lx\n", m_lsda);
+		log("m_instructions: %p\n", m_instructions);
+		log("m_cie.entry_start(): %p\n", m_cie.entry_start());
+//		log("m_instructions: %c\n", *m_instructions);
+		log("---------------------------------------------------\n");
 	}
 
 protected:

@@ -75,6 +75,13 @@ public:
     virtual uint64_t get_ip() const
     { return 0; }
 
+    /// Get Instruction Pointer
+    ///
+    /// @return returns the stack pointer value
+    ///
+    virtual uint64_t get_sp() const
+    { return 0; }
+
     /// Set Instruction Pointer
     ///
     /// Note: the write is staged and must be committed using the commit
