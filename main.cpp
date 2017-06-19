@@ -31,8 +31,7 @@ extern "C" void set_eh_frame(uintptr_t eh_addr, uintptr_t eh_size) noexcept
 void dump_eh_frame_list()
 {
 	struct eh_frame_t *eh_frame = get_eh_frame_list();
-	for (auto i = 0U; eh_frame[i].addr != nullptr; i++)
-	{
+	for (auto i = 0U; eh_frame[i].addr != nullptr; i++) {
 		log("eh_frame[%d].addr: %p\n", i, eh_frame[i].addr);
 	}
 }
